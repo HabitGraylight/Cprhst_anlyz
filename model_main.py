@@ -1,6 +1,10 @@
 import numpy as np
 import pandas as pd
 
+from sklearn.preprocessing import StandardScaler
+
+import statsmodels.api as sm
+
 # 设置随机种子以保证结果可复现
 np.random.seed(42)
 
@@ -50,3 +54,27 @@ for i in range(n_records):
 df = pd.DataFrame(data, columns=['Speaker', 'Language', 'EmotionLabel', 'EmotionScore', 'MFCC1', 'MFCC2'])
 # 查看前5行数据
 print(df.head())
+
+#标准化
+
+
+scaler = StandardScaler()
+df[['MFCC1', 'MFCC2']] = scaler.fit_transform(df[['MFCC1', 'MFCC2']])
+print(df[['MFCC1', 'MFCC2']].describe())  # 打印标准化后特征的统计量
+
+
+# 构建公式字符串：EmotionScore 由 MFCC1 和 MFCC2 预测
+fixed_formula = "EmotionScore ~ MFCC1 + MFCC2"
+
+# 使用 variance components (vc_formula) 指定多重随机效应
+vc = {
+    "Speaker": "0 + C(Speaker)",   # 说话人随机效应
+    "Language": "0 + C(Language)"  # 语言随机效应
+}
+
+# 创建线性混合效应模型
+# groups=np.ones(len(df)) 相当于将所有数据视为一个总体组，
+# 我们将具体的随机效应结构通过 vc_formula 指定
+model = sm.MixedLM.from_formula(fixed_formula, data=df, groups=np.ones(df.shape[0]), vc_formula=vc)
+result = model.fit(reml=True)  # 使用REML估计
+print(result.summary())
