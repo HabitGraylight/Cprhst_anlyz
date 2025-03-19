@@ -78,3 +78,17 @@ vc = {
 model = sm.MixedLM.from_formula(fixed_formula, data=df, groups=np.ones(df.shape[0]), vc_formula=vc)
 result = model.fit(reml=True)  # 使用REML估计
 print(result.summary())
+
+print("Fixed effects coefficients:")
+print(result.fe_params)  # 或 result.params 也包含固定效应和截距
+
+# 随机效应方差
+print("\nRandom effects variance (std dev):")
+for name, var in result.cov_re.items():
+    # 方差在对角线
+    std = np.sqrt(var[0, 0])
+    print(f"{name}: variance={var[0,0]:.3f}, std={std:.3f}")
+    
+print("\nModel log-likelihood:", result.llf)
+print("AIC:", result.aic)
+print("BIC:", result.bic)
